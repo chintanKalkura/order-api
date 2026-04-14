@@ -20,6 +20,9 @@ public class ItemDto {
     @NotBlank(message = "Product ID must not be blank")
     private String productId;
 
+    @NotBlank(message = "Product Name must not be blank")
+    private String productName;
+
     @NotNull(message = "Quantity must not be null")
     @Min(value = 1, message = "Quantity must be at least 1")
     private Integer quantity;
