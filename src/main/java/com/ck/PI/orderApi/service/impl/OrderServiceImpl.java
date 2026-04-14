@@ -15,6 +15,8 @@ import com.ck.PI.orderApi.exception.ResourceNotFoundException;
 import com.ck.PI.orderApi.repository.OrderRepository;
 import com.ck.PI.orderApi.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,17 +31,15 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
 
     @Override
-    public List<OrderResponse> getAllOrders(OrderStatus status) {
+    public Page<OrderResponse> getAllOrders(OrderStatus status, Pageable pageable) {
         try {
-            List<Order> orders;
+            Page<Order> orderPage;
             if (status != null) {
-                orders = orderRepository.findByStatus(status);
+                orderPage = orderRepository.findByStatus(status, pageable);
             } else {
-                orders = orderRepository.findAll();
+                orderPage = orderRepository.findAll(pageable);
             }
-            return orders.stream()
-                    .map(this::toOrderResponse)
-                    .collect(Collectors.toList());
+            return orderPage.map(this::toOrderResponse);
         } catch (Exception ex) {
             throw new InternalServerException("Failed to retrieve orders: " + ex.getMessage());
         }

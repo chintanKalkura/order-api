@@ -20,6 +20,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,39 +47,46 @@ class OrderServiceImplTest {
 
     @Test
     void getAllOrders_noStatusFilter_returnsAllOrders() {
+        Pageable pageable = PageRequest.of(0, 10);
         List<Order> orders = List.of(
                 buildOrder("id-1", OrderStatus.PENDING, 1),
                 buildOrder("id-2", OrderStatus.PROCESSING, 2)
         );
-        when(orderRepository.findAll()).thenReturn(orders);
+        when(orderRepository.findAll(pageable))
+                .thenReturn(new PageImpl<>(orders, pageable, orders.size()));
 
-        List<OrderResponse> result = orderService.getAllOrders(null);
+        Page<OrderResponse> result = orderService.getAllOrders(null, pageable);
 
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getOrderId()).isEqualTo("id-1");
-        assertThat(result.get(1).getOrderId()).isEqualTo("id-2");
-        verify(orderRepository).findAll();
-        verify(orderRepository, never()).findByStatus(any());
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent().get(0).getOrderId()).isEqualTo("id-1");
+        assertThat(result.getContent().get(1).getOrderId()).isEqualTo("id-2");
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        verify(orderRepository).findAll(pageable);
+        verify(orderRepository, never()).findByStatus(any(), any(Pageable.class));
     }
 
     @Test
     void getAllOrders_withStatusFilter_returnsOnlyMatchingOrders() {
+        Pageable pageable = PageRequest.of(0, 10);
         List<Order> pendingOrders = List.of(buildOrder("id-1", OrderStatus.PENDING, 1));
-        when(orderRepository.findByStatus(OrderStatus.PENDING)).thenReturn(pendingOrders);
+        when(orderRepository.findByStatus(OrderStatus.PENDING, pageable))
+                .thenReturn(new PageImpl<>(pendingOrders, pageable, pendingOrders.size()));
 
-        List<OrderResponse> result = orderService.getAllOrders(OrderStatus.PENDING);
+        Page<OrderResponse> result = orderService.getAllOrders(OrderStatus.PENDING, pageable);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getStatus()).isEqualTo(OrderStatus.PENDING);
-        verify(orderRepository).findByStatus(OrderStatus.PENDING);
-        verify(orderRepository, never()).findAll();
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(result.getTotalPages()).isEqualTo(1);
+        verify(orderRepository).findByStatus(OrderStatus.PENDING, pageable);
+        verify(orderRepository, never()).findAll(any(Pageable.class));
     }
 
     @Test
     void getAllOrders_repositoryThrows_throwsInternalServerException() {
-        when(orderRepository.findAll()).thenThrow(new RuntimeException("DB connection lost"));
+        Pageable pageable = PageRequest.of(0, 10);
+        when(orderRepository.findAll(pageable)).thenThrow(new RuntimeException("DB connection lost"));
 
-        assertThatThrownBy(() -> orderService.getAllOrders(null))
+        assertThatThrownBy(() -> orderService.getAllOrders(null, pageable))
                 .isInstanceOf(InternalServerException.class)
                 .hasMessageContaining("Failed to retrieve orders");
     }

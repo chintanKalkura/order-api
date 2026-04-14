@@ -18,6 +18,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,28 +45,31 @@ class OrderControllerTest {
 
     @Test
     void getAllOrders_noFilter_returns200WithOrderList() throws Exception {
-        when(orderService.getAllOrders(null))
-                .thenReturn(List.of(
-                        buildOrderResponse("id-1", OrderStatus.PENDING),
-                        buildOrderResponse("id-2", OrderStatus.DELIVERED)
-                ));
+        List<OrderResponse> responses = List.of(
+                buildOrderResponse("id-1", OrderStatus.PENDING),
+                buildOrderResponse("id-2", OrderStatus.DELIVERED)
+        );
+        when(orderService.getAllOrders(eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(responses));
 
         mockMvc.perform(get("/api/v1/orders"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].orderId").value("id-1"))
-                .andExpect(jsonPath("$[1].orderId").value("id-2"));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].orderId").value("id-1"))
+                .andExpect(jsonPath("$.content[1].orderId").value("id-2"))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test
     void getAllOrders_withStatusFilter_returns200WithFilteredList() throws Exception {
-        when(orderService.getAllOrders(OrderStatus.PENDING))
-                .thenReturn(List.of(buildOrderResponse("id-1", OrderStatus.PENDING)));
+        when(orderService.getAllOrders(eq(OrderStatus.PENDING), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(buildOrderResponse("id-1", OrderStatus.PENDING))));
 
         mockMvc.perform(get("/api/v1/orders").param("status", "PENDING"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].status").value("PENDING"));
+                .andExpect(jsonPath("$.content[0].status").value("PENDING"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test

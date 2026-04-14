@@ -4,12 +4,12 @@ import com.ck.PI.orderApi.dto.request.CancelOrderRequest;
 import com.ck.PI.orderApi.dto.request.OrderCreateRequest;
 import com.ck.PI.orderApi.dto.response.OrderResponse;
 import com.ck.PI.orderApi.enums.OrderStatus;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface OrderService {
 
-    List<OrderResponse> getAllOrders(OrderStatus status);
+    Page<OrderResponse> getAllOrders(OrderStatus status, Pageable pageable);
 
     OrderResponse getOrderByOrderId(String orderId);
 

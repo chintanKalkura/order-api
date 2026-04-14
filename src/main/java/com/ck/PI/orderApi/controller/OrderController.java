@@ -7,11 +7,13 @@ import com.ck.PI.orderApi.enums.OrderStatus;
 import com.ck.PI.orderApi.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -21,9 +23,11 @@ public class OrderController {
     private final OrderService orderService;
 
     @GetMapping
-    public ResponseEntity<List<OrderResponse>> getAllOrders(
-            @RequestParam(required = false) OrderStatus status) {
-        List<OrderResponse> orders = orderService.getAllOrders(status);
+    public ResponseEntity<Page<OrderResponse>> getAllOrders(
+            @RequestParam(required = false) OrderStatus status,
+            @PageableDefault(size = 10, sort = "orderCreatedAt", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        Page<OrderResponse> orders = orderService.getAllOrders(status, pageable);
         return ResponseEntity.ok(orders);
     }
 
