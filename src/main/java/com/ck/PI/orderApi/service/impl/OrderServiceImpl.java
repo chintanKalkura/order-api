@@ -128,6 +128,7 @@ public class OrderServiceImpl implements OrderService {
     private ItemDto toItemDto(Item item) {
         return ItemDto.builder()
                 .productId(item.getProductId())
+                .productName(item.getProductName())
                 .quantity(item.getQuantity())
                 .price(item.getPrice())
                 .build();
@@ -136,6 +137,7 @@ public class OrderServiceImpl implements OrderService {
     private Item toItemEntity(ItemDto dto) {
         return Item.builder()
                 .productId(dto.getProductId())
+                .productName(dto.getProductName())
                 .quantity(dto.getQuantity())
                 .price(dto.getPrice())
                 .build();
